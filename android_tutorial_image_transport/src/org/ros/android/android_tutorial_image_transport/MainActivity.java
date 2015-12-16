@@ -42,16 +42,19 @@ public class MainActivity extends RosActivity {
     super.onCreate(savedInstanceState);
     setContentView(R.layout.main);
     image = (RosImageView<sensor_msgs.CompressedImage>) findViewById(R.id.image);
-    image.setTopicName("/usb_cam/image_raw/compressed");
+    image.setTopicName("/bebop/image_raw/compressed");
     image.setMessageType(sensor_msgs.CompressedImage._TYPE);
     image.setMessageToBitmapCallable(new BitmapFromCompressedImage());
   }
 
   @Override
   protected void init(NodeMainExecutor nodeMainExecutor) {
-    NodeConfiguration nodeConfiguration =
-        NodeConfiguration.newPublic(InetAddressFactory.newNonLoopback().getHostAddress(),
-            getMasterUri());
+//    NodeConfiguration nodeConfiguration =
+//        NodeConfiguration.newPublic(InetAddressFactory.newNonLoopback().getHostAddress(),
+//            getMasterUri());
+
+    NodeConfiguration nodeConfiguration =NodeConfiguration.newPublic(InetAddressFactory.newNonLoopback().getHostAddress(), getMasterUri());
+
     nodeMainExecutor.execute(image, nodeConfiguration.setNodeName("android/video_view"));
   }
 }
