@@ -30,31 +30,42 @@ import org.ros.node.NodeMainExecutor;
  */
 public class MainActivity extends RosActivity {
 
-  private RosImageView<sensor_msgs.CompressedImage> image;
+    private RosImageView<sensor_msgs.CompressedImage> image;
 
-  public MainActivity() {
-    super("ImageTransportTutorial", "ImageTransportTutorial");
-  }
+    public MainActivity() {
+        super("ImageTransportTutorial", "ImageTransportTutorial");
+    }
 
-  @SuppressWarnings("unchecked")
-  @Override
-  public void onCreate(Bundle savedInstanceState) {
-    super.onCreate(savedInstanceState);
-    setContentView(R.layout.main);
-    image = (RosImageView<sensor_msgs.CompressedImage>) findViewById(R.id.image);
-    image.setTopicName("/bebop/image_raw/compressed");
-    image.setMessageType(sensor_msgs.CompressedImage._TYPE);
-    image.setMessageToBitmapCallable(new BitmapFromCompressedImage());
-  }
+    @SuppressWarnings("unchecked")
+    @Override
+    public void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.main);
+        image = (RosImageView<sensor_msgs.CompressedImage>) findViewById(R.id.camera_view);
+        image.setTopicName("/bebop/image_raw/compressed");
+        image.setMessageType(sensor_msgs.CompressedImage._TYPE);
+        image.setMessageToBitmapCallable(new BitmapFromCompressedImage());
+    }
 
-  @Override
-  protected void init(NodeMainExecutor nodeMainExecutor) {
+    @Override
+    protected void init(NodeMainExecutor nodeMainExecutor) {
 //    NodeConfiguration nodeConfiguration =
 //        NodeConfiguration.newPublic(InetAddressFactory.newNonLoopback().getHostAddress(),
 //            getMasterUri());
 
-    NodeConfiguration nodeConfiguration =NodeConfiguration.newPublic(InetAddressFactory.newNonLoopback().getHostAddress(), getMasterUri());
+        NodeConfiguration nodeConfiguration =NodeConfiguration.newPublic(InetAddressFactory.newNonLoopback().getHostAddress(), getMasterUri());
 
-    nodeMainExecutor.execute(image, nodeConfiguration.setNodeName("android/video_view"));
-  }
+        nodeMainExecutor.execute(image, nodeConfiguration.setNodeName("android/video_view"));
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        super.splashScreen();
+//    if (getIntent().getExtras() != null) {
+//      tleBtn.setResourceName(getIntent().getExtras().getString("tle"));
+////            sprBtn.setText(getIntent().getExtras().getString("spr"));
+////            sprBtn.setVisibility(getIntent().getExtras().getBoolean("isSprVisible") ? View.VISIBLE : View.INVISIBLE);
+//    }
+    }
 }

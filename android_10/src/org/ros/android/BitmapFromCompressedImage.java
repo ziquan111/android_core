@@ -24,12 +24,30 @@ import org.jboss.netty.buffer.ChannelBuffer;
  * @author damonkohler@google.com (Damon Kohler)
  */
 public class BitmapFromCompressedImage implements
-    MessageCallable<Bitmap, sensor_msgs.CompressedImage> {
+        MessageCallable<Bitmap, sensor_msgs.CompressedImage> {
 
-  @Override
-  public Bitmap call(sensor_msgs.CompressedImage message) {
-    ChannelBuffer buffer = message.getData();
-    byte[] data = buffer.array();
-    return BitmapFactory.decodeByteArray(data, buffer.arrayOffset(), buffer.readableBytes());
-  }
+
+    private static BitmapFactory.Options options = new BitmapFactory.Options();
+    private static Bitmap last_bm;
+
+    static {
+        options.inSampleSize = 1;
+        options.inMutable = true;
+    }
+
+    public void addBitmapBuffer(Bitmap buffer) {
+        if (options.inBitmap == null) {
+            options.inBitmap = buffer;
+        }
+    }
+
+    @Override
+    public Bitmap call(sensor_msgs.CompressedImage message) {
+        ChannelBuffer buffer = message.getData();
+        if (buffer.readableBytes() > 0) {
+            last_bm = BitmapFactory.decodeByteArray(buffer.array(), buffer.arrayOffset(), buffer.readableBytes(), options);
+        }
+//        System.out.println(last_bm.getWidth() + " by " + last_bm.getHeight());
+        return last_bm;
+    }
 }

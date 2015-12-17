@@ -23,11 +23,11 @@ dependencies {
 apply plugin: "com.android.library"
 
 android {
-  compileSdkVersion 10
+  compileSdkVersion 19
 
   defaultConfig {
-    minSdkVersion 10
-    targetSdkVersion 10
+    minSdkVersion 11
+    targetSdkVersion 11
     versionCode 1
     versionName "1.0"
   }
