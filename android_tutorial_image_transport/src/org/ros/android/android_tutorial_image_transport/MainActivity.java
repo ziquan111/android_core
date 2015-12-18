@@ -16,13 +16,25 @@
 
 package org.ros.android.android_tutorial_image_transport;
 
+import android.graphics.RectF;
 import android.os.Bundle;
+
+import com.google.common.collect.Lists;
+
 import org.ros.address.InetAddressFactory;
 import org.ros.android.BitmapFromCompressedImage;
+import org.ros.android.MessageCallable;
 import org.ros.android.RosActivity;
+import org.ros.android.view.RosAugmentedImageView;
+import org.ros.android.view.RosButton;
 import org.ros.android.view.RosImageView;
 import org.ros.node.NodeConfiguration;
 import org.ros.node.NodeMainExecutor;
+
+import java.util.ArrayList;
+
+import sensor_msgs.CompressedImage;
+import std_msgs.Float32MultiArray;
 
 /**
  * @author ethan.rublee@gmail.com (Ethan Rublee)
@@ -30,10 +42,10 @@ import org.ros.node.NodeMainExecutor;
  */
 public class MainActivity extends RosActivity {
 
-    private RosImageView<sensor_msgs.CompressedImage> image;
-
+    private RosAugmentedImageView<CompressedImage, Float32MultiArray, Float32MultiArray> interactiveCameraView;
+    private RosButton tlBtn;    //takeoff-land button
     public MainActivity() {
-        super("ImageTransportTutorial", "ImageTransportTutorial");
+        super("MainActivityTicker", "MainActivityTitle");
     }
 
     @SuppressWarnings("unchecked")
@@ -41,10 +53,34 @@ public class MainActivity extends RosActivity {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.main);
-        image = (RosImageView<sensor_msgs.CompressedImage>) findViewById(R.id.camera_view);
-        image.setTopicName("/bebop/image_raw/compressed");
-        image.setMessageType(sensor_msgs.CompressedImage._TYPE);
-        image.setMessageToBitmapCallable(new BitmapFromCompressedImage());
+        interactiveCameraView = (RosAugmentedImageView<CompressedImage, Float32MultiArray, Float32MultiArray>) findViewById(R.id.camera_view);
+        interactiveCameraView.setTopicNames("bebop/image_raw/compressed", "fleye/tld_tracked_object", "fleye/tld_tracked_object");
+        interactiveCameraView.setMessageTypes(sensor_msgs.CompressedImage._TYPE, Float32MultiArray._TYPE, Float32MultiArray._TYPE);
+        interactiveCameraView.setMessageToBitmapCallable(new BitmapFromCompressedImage());
+        interactiveCameraView.setMessageToPointsCallable(new MessageCallable<float[], Float32MultiArray>() {
+            @Override
+            public float[] call(Float32MultiArray message) {
+                return new float[]{
+                        message.getData()[0] + message.getData()[2] / 2f,
+                        message.getData()[1] + message.getData()[3] / 2f};
+            }
+        });
+        interactiveCameraView.setMessageToRectsCallable(new MessageCallable<ArrayList<RectF>, Float32MultiArray>() {
+            @Override
+            public ArrayList<RectF> call(Float32MultiArray message) {
+                ArrayList<RectF> result = Lists.newArrayList();
+                result.add(new RectF(
+                        message.getData()[0],
+                        message.getData()[1],
+                        message.getData()[0] + message.getData()[2],
+                        message.getData()[1] + message.getData()[3]));
+                return result;
+            }
+        });
+
+        tlBtn = (RosButton) findViewById(R.id.takeoff_land_button);
+        tlBtn.setTopicName("fleye/takeoff_land");
+
     }
 
     @Override
@@ -55,7 +91,7 @@ public class MainActivity extends RosActivity {
 
         NodeConfiguration nodeConfiguration =NodeConfiguration.newPublic(InetAddressFactory.newNonLoopback().getHostAddress(), getMasterUri());
 
-        nodeMainExecutor.execute(image, nodeConfiguration.setNodeName("android/video_view"));
+        nodeMainExecutor.execute(interactiveCameraView, nodeConfiguration.setNodeName("android/video_view"));
     }
 
     @Override

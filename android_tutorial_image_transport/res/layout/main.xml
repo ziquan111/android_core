@@ -13,17 +13,18 @@
     android:background="@android:color/background_dark"
     android:id="@+id/big_view">
 
+
     <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="@dimen/menu_bar_height"
         android:layout_alignParentBottom="true"
         android:id="@+id/menu_bar">
 
-        <org.ros.android.view.RosAugmentedImageView
+        <org.ros.android.view.RosButton
             android:layout_width="@dimen/takeoff_land_button_width"
             android:layout_height="match_parent"
             android:layout_alignParentRight="true"
-            android:background="@android:color/holo_orange_light"
+            android:src="@drawable/ic_flight_takeoff_white_24dp"
             android:id="@+id/takeoff_land_button"/>
 
         <HorizontalScrollView
@@ -33,7 +34,7 @@
             android:background="@android:color/holo_blue_dark"/>
     </RelativeLayout>
 
-    <org.ros.android.view.RosImageView
+    <org.ros.android.view.RosAugmentedImageView
         android:layout_width="@dimen/image_view_width"
         android:layout_height="@dimen/image_view_height"
         android:layout_above="@id/menu_bar"
@@ -45,7 +46,7 @@
         android:layout_alignParentRight="true"
         android:layout_centerVertical="true"
         android:layout_margin="16dp"
-        android:background="@android:color/holo_red_light"
+        android:background="@drawable/ic_camera_white_48dp"
         android:id="@+id/shoot_button"/>
 
     <org.ros.android.view.RosButton

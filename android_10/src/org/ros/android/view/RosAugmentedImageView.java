@@ -13,6 +13,8 @@ import android.graphics.RectF;
 import android.util.AttributeSet;
 import android.widget.ImageView;
 
+import com.google.common.collect.Lists;
+
 import org.ros.android.BitmapFromCompressedImage;
 import org.ros.android.MessageCallable;
 import org.ros.message.MessageListener;
@@ -38,8 +40,8 @@ public class RosAugmentedImageView<T, S, U> extends ImageView implements NodeMai
     private Bitmap bitmap_copy;
 
     private static float[] points;
-    private static ArrayList<RectF> targetRects;   // [left, top, right, bottom, ...]
-    private static ArrayList<RectF> otherRects;  // [left, top, right, bottom, ...]
+    private static ArrayList<RectF> targetRects = Lists.newArrayList();   // [left, top, right, bottom, ...]
+    private static ArrayList<RectF> otherRects = Lists.newArrayList();  // [left, top, right, bottom, ...]
 
     private final Paint pointPaint, targetRectPaint, otherRectPaint, crossPaint;
     private final Paint redMaskPaint, greenMaskPaint, blueMaskPaint, orangeMaskPaint;
