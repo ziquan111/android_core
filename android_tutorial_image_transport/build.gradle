@@ -16,6 +16,8 @@
 
 dependencies {
   compile project(':android_10')
+
+  compile 'com.android.support:support-v13:21.0.3'
 }
 
 apply plugin: 'com.android.application'
@@ -24,9 +26,9 @@ android {
   compileSdkVersion 22
 
   defaultConfig {
-    minSdkVersion 14
+    minSdkVersion 19
     applicationId "org.ros.android.android_tutorial_image_transport"
-    targetSdkVersion 14
+    targetSdkVersion 19
     versionCode 1
     versionName "1.0"
   }

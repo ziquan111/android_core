@@ -13,7 +13,6 @@
     android:background="@android:color/background_dark"
     android:id="@+id/big_view">
 
-
     <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="@dimen/menu_bar_height"
@@ -21,17 +20,80 @@
         android:id="@+id/menu_bar">
 
         <org.ros.android.view.RosButton
-            android:layout_width="@dimen/takeoff_land_button_width"
+            android:layout_width="@dimen/button_width"
             android:layout_height="match_parent"
-            android:layout_alignParentRight="true"
+            android:layout_alignParentStart="true"
             android:src="@drawable/ic_flight_takeoff_white_24dp"
+            android:background="?android:attr/selectableItemBackground"
             android:id="@+id/takeoff_land_button"/>
+
+        <org.ros.android.view.RosShootButton
+            android:layout_width="@dimen/button_width"
+            android:layout_height="match_parent"
+            android:layout_centerHorizontal="true"
+            android:src="@drawable/ic_camera_alt_white_24dp"
+            android:background="?android:attr/selectableItemBackground"
+            android:id="@+id/shoot_button"/>
+
+        <ImageView
+            android:layout_width="@dimen/button_width"
+            android:layout_height="match_parent"
+            android:layout_toEndOf="@id/takeoff_land_button"
+            android:src="@drawable/ic_gallery_white_24dp"
+            android:onClick="galleryViewClicked"
+            android:background="?android:attr/selectableItemBackground"
+            android:id="@+id/gallery_button"/>
 
         <HorizontalScrollView
             android:layout_width="match_parent"
             android:layout_height="@dimen/menu_bar_height"
-            android:layout_toLeftOf="@id/takeoff_land_button"
-            android:background="@android:color/holo_blue_dark"/>
+            android:layout_toEndOf="@id/shoot_button">
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:orientation="horizontal"
+                android:layout_gravity="right">
+
+                <org.ros.android.view.RosButton
+                    android:layout_width="@dimen/menu_bar_height"
+                    android:layout_height="match_parent"
+                    android:layout_marginLeft="@dimen/button_margin"
+                    android:layout_marginRight="@dimen/button_margin"
+                    android:src="@drawable/ic_panorama_horizontal_grey_18dp"
+                    android:scaleType="centerInside"
+                    android:background="?android:attr/selectableItemBackground"
+                    android:id="@+id/pano_button"/>
+
+                <org.ros.android.view.RosButton
+                    android:layout_width="@dimen/menu_bar_height"
+                    android:layout_height="match_parent"
+                    android:layout_marginLeft="@dimen/button_margin"
+                    android:layout_marginRight="@dimen/button_margin"
+                    android:src="@drawable/ic_orbit_grey_18dp"
+                    android:scaleType="centerInside"
+                    android:background="?android:attr/selectableItemBackground"
+                    android:id="@+id/orbit_button"/>
+
+                <org.ros.android.view.RosButton
+                    android:layout_width="@dimen/menu_bar_height"
+                    android:layout_height="match_parent"
+                    android:layout_marginLeft="@dimen/button_margin"
+                    android:layout_marginRight="@dimen/button_margin"
+                    android:src="@drawable/ic_zigzag_grey_18dp"
+                    android:scaleType="centerInside"
+                    android:background="?android:attr/selectableItemBackground"
+                    android:id="@+id/zigzag_button"/>
+
+                <!--<TextView-->
+                    <!--android:layout_width="match_parent"-->
+                    <!--android:layout_height="@dimen/menu_bar_height"-->
+                    <!--android:gravity="center_vertical"-->
+                    <!--android:textAppearance="?android:attr/textAppearanceLarge"-->
+                    <!--android:text="orbit"-->
+                    <!--/>-->
+            </LinearLayout>
+        </HorizontalScrollView>
+
     </RelativeLayout>
 
     <org.ros.android.view.RosAugmentedImageView
@@ -40,30 +102,17 @@
         android:layout_above="@id/menu_bar"
         android:id="@+id/camera_view" />
 
-    <org.ros.android.view.RosButton
-        android:layout_width="@dimen/button_width"
-        android:layout_height="@dimen/button_height"
-        android:layout_alignParentRight="true"
-        android:layout_centerVertical="true"
-        android:layout_margin="16dp"
-        android:background="@drawable/ic_camera_white_48dp"
-        android:id="@+id/shoot_button"/>
 
-    <org.ros.android.view.RosButton
-        android:layout_width="@dimen/button_width"
-        android:layout_height="@dimen/button_height"
-        android:layout_alignParentTop="true"
-        android:layout_alignParentRight="true"
-        android:layout_margin="16dp"
-        android:background="@android:color/holo_purple"
-        android:id="@+id/gallery_button"/>
 
-    <org.ros.android.view.RosAugmentedImageView
-        android:layout_width="@dimen/battery_width"
-        android:layout_height="@dimen/battery_height"
-        android:layout_alignParentStart="true"
-        android:layout_margin="16dp"
-        android:background="@android:color/holo_green_dark"
-        android:id="@+id/battery" />
+
+
+
+    <!--<org.ros.android.view.RosAugmentedImageView-->
+        <!--android:layout_width="@dimen/battery_width"-->
+        <!--android:layout_height="@dimen/battery_height"-->
+        <!--android:layout_alignParentStart="true"-->
+        <!--android:layout_margin="16dp"-->
+        <!--android:background="@android:color/black"-->
+        <!--android:id="@+id/battery" />-->
 </RelativeLayout>
 

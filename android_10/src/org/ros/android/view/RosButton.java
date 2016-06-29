@@ -4,6 +4,7 @@ package org.ros.android.view;
 import android.content.Context;
 import android.util.AttributeSet;
 import android.view.View;
+import android.widget.ImageView;
 
 import com.google.common.collect.Maps;
 
@@ -15,6 +16,7 @@ import org.ros.node.topic.Subscriber;
 
 import java.lang.String;
 import java.util.Map;
+import java.util.concurrent.Callable;
 
 import std_msgs.*;
 
@@ -23,38 +25,42 @@ import std_msgs.*;
  */
 public class RosButton extends RosImageView {
 
-    private static int idCount = 0;                 // auto increment
+    private static Map<Integer, String> mapUniqueGestureId = Maps.newHashMap();    // to make sure gesture id is unique when it is created
 
-    private int id;
+//    private int id;
     private String resourceName;
     private Map<String, Integer> mapSkin;           // one button may have different skins, e.g, takeoff/land
+    private Map<String, Integer> mapGestureId;      // each skin has a unique gesture id
 
     private Publisher<Float32MultiArray> publisher; // all RosButtons publish to a fixed topic "fleye/gesture"
     private String topicName;                       // but subscribe to different topics
 
+    private Callable<float[]> callable;
+    private Runnable runnable;
+
 
     public RosButton(Context context) {
         super(context);
-        this.id = idCount++;
         this.resourceName = "";
         mapSkin = Maps.newHashMap();
+        mapGestureId = Maps.newHashMap();
     }
 
     public RosButton(Context context, AttributeSet attrs) {
         super(context, attrs);
-        this.id = idCount++;
         this.resourceName = "";
         mapSkin = Maps.newHashMap();
+        mapGestureId = Maps.newHashMap();
     }
 
     public RosButton(Context context, AttributeSet attrs, int defStyle) {
         super(context, attrs, defStyle);
-        this.id = idCount++;
         this.resourceName = "";
         mapSkin = Maps.newHashMap();
+        mapGestureId = Maps.newHashMap();
     }
 
-//    public void setIds(char id, char idOnLongPress) {
+//    public void setId(char id) {
 //        this.id = id;
 //    }
 
@@ -63,8 +69,15 @@ public class RosButton extends RosImageView {
         this.topicName = topicName;
     }
 
-    public void addResource(String name, int resId) {
+    public void addResource(String name, int resId, int gestureId) {
+        if (mapUniqueGestureId.containsKey(gestureId)) {
+            System.out.println("Gesture id " + (char) gestureId + " has been used for " + mapUniqueGestureId.get(gestureId));
+            return;
+        }
+        mapUniqueGestureId.put(gestureId, name);
         this.mapSkin.put(name, resId);
+        this.mapGestureId.put(name, gestureId);
+
     }
 
     public String getResourceName() {
@@ -73,7 +86,7 @@ public class RosButton extends RosImageView {
 
     // change the skin of a button, if resource name is empty string "", the button is invisible
     public void setResourceName(String resourceName) {
-        System.out.println(this.resourceName);
+//        System.out.println(this.resourceName);
         if (resourceName.equals("")) {
             setVisibility(View.INVISIBLE);
         }
@@ -81,6 +94,7 @@ public class RosButton extends RosImageView {
             setVisibility(View.VISIBLE);
             setImageResource(mapSkin.get(resourceName));
         }
+        this.resourceName = resourceName;
     }
 
 //    public void setMessageType(String messageType) {
@@ -97,14 +111,39 @@ public class RosButton extends RosImageView {
         return GraphName.of("android_10/ros_button");
     }
 
+    public void setCallable(Callable<float[]> callable) {
+        this.callable = callable;
+    }
+
+    public void setRunnable(Runnable runnable) {
+        this.runnable = runnable;
+    }
+
     @Override
     public void onStart(ConnectedNode connectedNode) {
         publisher = connectedNode.newPublisher("fleye/gesture", Float32MultiArray._TYPE);
         setOnClickListener(new OnClickListener() {
             public void onClick(View unused) {
                 Float32MultiArray array = publisher.newMessage();
-                array.setData(new float[]{id});
-                publisher.publish(array);
+                try {
+                    if (callable != null) {
+                        float[] temp = callable.call();
+                        array.setData(temp);
+                        for (float f : temp) {
+                            System.out.print(f + "\t");
+                        }
+                        System.out.println();
+                    } else {
+                        array.setData(new float[]{mapGestureId.get(resourceName)});
+                        System.out.println("ROS Button send " + mapGestureId.get(resourceName));
+                    }
+                    publisher.publish(array);
+                    if (runnable != null) {
+                        runnable.run();
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
             }
         });
 

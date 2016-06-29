@@ -11,9 +11,10 @@ import android.graphics.DashPathEffect;
 import android.graphics.Paint;
 import android.graphics.RectF;
 import android.util.AttributeSet;
+import android.util.Pair;
 import android.widget.ImageView;
 
-import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 
 import org.ros.android.BitmapFromCompressedImage;
 import org.ros.android.MessageCallable;
@@ -24,26 +25,28 @@ import org.ros.node.Node;
 import org.ros.node.NodeMain;
 import org.ros.node.topic.Subscriber;
 
-import java.util.ArrayList;
+import java.util.HashMap;
 
 /**
  * Created by ziquan on 2/13/15.
  */
-// TODO: add 4th topic otherRects to distinguish between target rects
-public class RosAugmentedImageView<T, S, U> extends ImageView implements NodeMain {
-    private String topicName1, topicName2, topicName3;
-    private String messageType1, messageType2, messageType3;
-    private MessageCallable<Bitmap, T> callable1;   // for image
-    private MessageCallable<float[], S> callable2;  // for points
-    private MessageCallable<ArrayList<RectF>, U> callable3;  // for targetrects
+public class RosAugmentedImageView<T, S, U, V> extends ImageView implements NodeMain {
+    private String imageTopicName, pointsTopicName, linesTopicName,rectsTopicName;
+    private String imageMessageType, pointsMessageType, linesMessageType, rectsMessageType;
+    private MessageCallable<Bitmap, T> callableToImage;
+    private MessageCallable<float[], S> callableToPoints;
+    private MessageCallable<float[], U> callableToLines;
+    private MessageCallable<HashMap<Integer, Pair<RectF, Integer> >, V> callableToRects;
 
     private Bitmap bitmap_copy;
 
     private static float[] points;
-    private static ArrayList<RectF> targetRects = Lists.newArrayList();   // [left, top, right, bottom, ...]
-    private static ArrayList<RectF> otherRects = Lists.newArrayList();  // [left, top, right, bottom, ...]
+//    private static ArrayList<RectF> targetRects = Lists.newArrayList();   // [left, top, right, bottom, ...]
+//    private static ArrayList<RectF> otherTargetRects = Lists.newArrayList();  // [left, top, right, bottom, ...]
+    private static HashMap<Integer, Pair<RectF, Integer> > targetRects = Maps.newHashMap();  // [left, top, right, bottom, ...]
+    private static float[] lines;
 
-    private final Paint pointPaint, targetRectPaint, otherRectPaint, crossPaint;
+    private final Paint pointPaint, linePaint, composedTargetRectPaint, noneComposedTargetRectPaint, crossPaint;
     private final Paint redMaskPaint, greenMaskPaint, blueMaskPaint, orangeMaskPaint;
 
     private final float crossSize = 14f, maskSize = 75f, maskVerticalMargin = 100f, maskHorizontalMargin = 180f;
@@ -53,19 +56,24 @@ public class RosAugmentedImageView<T, S, U> extends ImageView implements NodeMai
     public RosAugmentedImageView(Context context) {
         super(context);
         pointPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-        pointPaint.setARGB(255,255,255,255);
+        pointPaint.setARGB(255, 255, 255, 255);
         pointPaint.setStrokeWidth(1.5f);
 
-        targetRectPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-        targetRectPaint.setARGB(255,255,165,0);
-        targetRectPaint.setStrokeWidth(1.5f);
-        targetRectPaint.setStyle(Paint.Style.STROKE);
+        linePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        linePaint.setARGB(255, 77, 166, 255);
+        linePaint.setStrokeWidth(1.5f);
+        linePaint.setStyle(Paint.Style.STROKE);
 
-        otherRectPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-        otherRectPaint.setARGB(255, 77, 166, 255);
-        otherRectPaint.setStrokeWidth(1.5f);
-        otherRectPaint.setStyle(Paint.Style.STROKE);
-        otherRectPaint.setPathEffect(new DashPathEffect(new float[]{5, 5}, 0));
+        composedTargetRectPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        composedTargetRectPaint.setARGB(255, 255, 165, 0);
+        composedTargetRectPaint.setStrokeWidth(2.0f);
+        composedTargetRectPaint.setStyle(Paint.Style.STROKE);
+
+        noneComposedTargetRectPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        noneComposedTargetRectPaint.setARGB(255, 77, 166, 255);
+        noneComposedTargetRectPaint.setStrokeWidth(2.0f);
+        noneComposedTargetRectPaint.setStyle(Paint.Style.STROKE);
+        noneComposedTargetRectPaint.setPathEffect(new DashPathEffect(new float[]{5, 5}, 0));
 
         crossPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         crossPaint.setARGB(255, 255, 0, 0);
@@ -99,16 +107,21 @@ public class RosAugmentedImageView<T, S, U> extends ImageView implements NodeMai
         pointPaint.setARGB(255, 255, 255, 255);
         pointPaint.setStrokeWidth(1.5f);
 
-        targetRectPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-        targetRectPaint.setARGB(255,255,165,0);
-        targetRectPaint.setStrokeWidth(1.5f);
-        targetRectPaint.setStyle(Paint.Style.STROKE);
+        linePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        linePaint.setARGB(255, 77, 166, 255);
+        linePaint.setStrokeWidth(1.5f);
+        linePaint.setStyle(Paint.Style.STROKE);
 
-        otherRectPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-        otherRectPaint.setARGB(255, 77, 166, 255);
-        otherRectPaint.setStrokeWidth(1.5f);
-        otherRectPaint.setStyle(Paint.Style.STROKE);
-        otherRectPaint.setPathEffect(new DashPathEffect(new float[]{5, 5}, 0));
+        composedTargetRectPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        composedTargetRectPaint.setARGB(255, 255, 165, 0);
+        composedTargetRectPaint.setStrokeWidth(2.0f);
+        composedTargetRectPaint.setStyle(Paint.Style.STROKE);
+
+        noneComposedTargetRectPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        noneComposedTargetRectPaint.setARGB(255, 77, 166, 255);
+        noneComposedTargetRectPaint.setStrokeWidth(2.0f);
+        noneComposedTargetRectPaint.setStyle(Paint.Style.STROKE);
+        noneComposedTargetRectPaint.setPathEffect(new DashPathEffect(new float[]{5, 5}, 0));
 
         crossPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         crossPaint.setARGB(255, 255, 0, 0);
@@ -142,16 +155,21 @@ public class RosAugmentedImageView<T, S, U> extends ImageView implements NodeMai
         pointPaint.setARGB(255, 255, 255, 255);
         pointPaint.setStrokeWidth(1.5f);
 
-        targetRectPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-        targetRectPaint.setARGB(255, 255, 165, 0);
-        targetRectPaint.setStrokeWidth(1.5f);
-        targetRectPaint.setStyle(Paint.Style.STROKE);
+        linePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        linePaint.setARGB(255, 77, 166, 255);
+        linePaint.setStrokeWidth(1.5f);
+        linePaint.setStyle(Paint.Style.STROKE);
 
-        otherRectPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-        otherRectPaint.setARGB(255, 77, 166, 255);
-        otherRectPaint.setStrokeWidth(1.8f);
-        otherRectPaint.setStyle(Paint.Style.STROKE);
-        otherRectPaint.setPathEffect(new DashPathEffect(new float[]{5, 5}, 0));
+        composedTargetRectPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        composedTargetRectPaint.setARGB(255, 255, 165, 0);
+        composedTargetRectPaint.setStrokeWidth(2.0f);
+        composedTargetRectPaint.setStyle(Paint.Style.STROKE);
+
+        noneComposedTargetRectPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        noneComposedTargetRectPaint.setARGB(255, 77, 166, 255);
+        noneComposedTargetRectPaint.setStrokeWidth(2.0f);
+        noneComposedTargetRectPaint.setStyle(Paint.Style.STROKE);
+        noneComposedTargetRectPaint.setPathEffect(new DashPathEffect(new float[]{5, 5}, 0));
 
         crossPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         crossPaint.setARGB(255, 255, 0, 0);
@@ -179,28 +197,35 @@ public class RosAugmentedImageView<T, S, U> extends ImageView implements NodeMai
         orangeMaskPaint.setStyle(Paint.Style.FILL_AND_STROKE);
     }
 
-    public void setTopicNames(String topicName1, String topicName2, String topicName3) {
-        this.topicName1 = topicName1;
-        this.topicName2 = topicName2;
-        this.topicName3 = topicName3;
+    public void setTopicNames(String imageTopicName, String pointsTopicName, String linesTopicName, String rectsTopicName) {
+        this.imageTopicName = imageTopicName;
+        this.pointsTopicName = pointsTopicName;
+        this.linesTopicName = linesTopicName;
+        this.rectsTopicName = rectsTopicName;
     }
 
-    public void setMessageTypes(String messageType1, String messageType2, String messageType3) {
-        this.messageType1 = messageType1;
-        this.messageType2 = messageType2;
-        this.messageType3 = messageType3;
+    public void setMessageTypes(String imageMessageType, String pointsMessageType, String linesMessageType, String rectsMessageType) {
+        this.imageMessageType = imageMessageType;
+        this.pointsMessageType = pointsMessageType;
+        this.linesMessageType = linesMessageType;
+        this.rectsMessageType = rectsMessageType;
     }
 
     public void setMessageToBitmapCallable(MessageCallable<Bitmap, T> callable) {
-        this.callable1 = callable;
+        this.callableToImage = callable;
     }
 
     public void setMessageToPointsCallable(MessageCallable<float[], S> callable) {
-        this.callable2 = callable;
+        this.callableToPoints = callable;
     }
 
-    public void setMessageToRectsCallable(MessageCallable<ArrayList<RectF>, U> callable) {
-        this.callable3 = callable;
+    public void setMessageToLinesCallable(MessageCallable<float[], U> callable) {
+        this.callableToLines = callable;
+    }
+
+
+    public void setMessageToRectsCallable(MessageCallable<HashMap<Integer, Pair<RectF, Integer> >, V> callable) {
+        this.callableToRects = callable;
     }
 
     @Override
@@ -214,39 +239,55 @@ public class RosAugmentedImageView<T, S, U> extends ImageView implements NodeMai
 
     @Override
     public void onStart(ConnectedNode connectedNode) {
-        Subscriber<T> subscriber1 = connectedNode.newSubscriber(topicName1, messageType1);
-        Subscriber<S> subscriber2 = connectedNode.newSubscriber(topicName2, messageType2);
-        Subscriber<U> subscriber3 = connectedNode.newSubscriber(topicName3, messageType3);
-        subscriber1.addMessageListener(new MessageListener<T>() {
+        Subscriber<T> imageSubscriber = connectedNode.newSubscriber(imageTopicName, imageMessageType);
+        Subscriber<S> pointsSubscriber = connectedNode.newSubscriber(pointsTopicName, pointsMessageType);
+        Subscriber<U> linesSubscriber = connectedNode.newSubscriber(linesTopicName, linesMessageType);
+        Subscriber<V> rectsSubscriber = connectedNode.newSubscriber(rectsTopicName, rectsMessageType);
+        imageSubscriber.addMessageListener(new MessageListener<T>() {
             @Override
             public void onNewMessage(final T message) {
                 post(new Runnable() {
                     @Override
                     public void run() {
-                        Bitmap bitmap = callable1.call(message);
-                        ((BitmapFromCompressedImage) callable1).addBitmapBuffer(bitmap);
+                        Bitmap bitmap = callableToImage.call(message);
+                        ((BitmapFromCompressedImage) callableToImage).addBitmapBuffer(bitmap);
                         Canvas canvas = new Canvas(bitmap);
                         // draw points
                         if (points != null) {
                             canvas.drawPoints(points, pointPaint);
                         }
                         // draw targetrects (with red cross)
-                        for (RectF targetRect : targetRects) {
-                            canvas.drawRoundRect(targetRect, 10f, 10f, targetRectPaint);
-                            canvas.drawCircle(targetRect.right, targetRect.top, crossSize, crossPaint);
+                        for (int key : targetRects.keySet()) {
+                            canvas.drawRoundRect(targetRects.get(key).first, 10f, 10f, (targetRects.get(key).second > 0 ? composedTargetRectPaint : noneComposedTargetRectPaint));
+                            canvas.drawCircle(targetRects.get(key).first.right, targetRects.get(key).first.top, crossSize, crossPaint);
+//                            canvas.drawText("" + key, targetRects.get(key).first.right, targetRects.get(key).first.top, crossPaint);
                             canvas.drawLines(
-                                    new float[]{targetRect.right - crossSize / (float) Math.sqrt(2), targetRect.top + crossSize / (float) Math.sqrt(2),
-                                            targetRect.right + crossSize / (float)Math.sqrt(2), targetRect.top - crossSize / (float)Math.sqrt(2),
-                                            targetRect.right - crossSize / (float)Math.sqrt(2), targetRect.top - crossSize / (float)Math.sqrt(2),
-                                            targetRect.right + crossSize / (float)Math.sqrt(2), targetRect.top + crossSize / (float)Math.sqrt(2)},
+                                    new float[]{targetRects.get(key).first.right - crossSize / (float) Math.sqrt(2), targetRects.get(key).first.top + crossSize / (float) Math.sqrt(2),
+                                                targetRects.get(key).first.right + crossSize / (float) Math.sqrt(2), targetRects.get(key).first.top - crossSize / (float) Math.sqrt(2),
+                                                targetRects.get(key).first.right - crossSize / (float) Math.sqrt(2), targetRects.get(key).first.top - crossSize / (float) Math.sqrt(2),
+                                                targetRects.get(key).first.right + crossSize / (float) Math.sqrt(2), targetRects.get(key).first.top + crossSize / (float) Math.sqrt(2)},
                                     crossPaint);
                         }
-                        // draw otherRects
-                        if (otherRects != null) {
-//                            for(RectF rectF : otherRects) {
-//                                canvas.drawRoundRect(rectF, 10f, 10f, otherRectPaint);
-//                            }
+                        // draw line
+                        if (lines != null) {
+                            canvas.drawLines(lines, linePaint);
                         }
+//                        for (RectF targetRect : targetRects.values()) {
+//                            canvas.drawRoundRect(targetRect, 10f, 10f, composedTargetRectPaint);
+//                            canvas.drawCircle(targetRect.right, targetRect.top, crossSize, crossPaint);
+//                            canvas.drawLines(
+//                                    new float[]{targetRect.right - crossSize / (float) Math.sqrt(2), targetRect.top + crossSize / (float) Math.sqrt(2),
+//                                            targetRect.right + crossSize / (float) Math.sqrt(2), targetRect.top - crossSize / (float) Math.sqrt(2),
+//                                            targetRect.right - crossSize / (float) Math.sqrt(2), targetRect.top - crossSize / (float) Math.sqrt(2),
+//                                            targetRect.right + crossSize / (float) Math.sqrt(2), targetRect.top + crossSize / (float) Math.sqrt(2)},
+//                                    crossPaint);
+//                        }
+                        // draw otherTargetRects
+//                        if (otherTargetRects != null) {
+////                            for(RectF rectF : otherTargetRects) {
+////                                canvas.drawRoundRect(rectF, 10f, 10f, noneComposedTargetRectPaint);
+////                            }
+//                        }
 //                        if (toDrawMask) {
 //                            canvas.drawCircle(maskHorizontalMargin, maskVerticalMargin, maskSize, redMaskPaint);
 //                            canvas.drawCircle(640f - maskHorizontalMargin, maskVerticalMargin, maskSize, greenMaskPaint);
@@ -260,25 +301,37 @@ public class RosAugmentedImageView<T, S, U> extends ImageView implements NodeMai
             }
         });
 
-        subscriber2.addMessageListener(new MessageListener<S>() {
+        pointsSubscriber.addMessageListener(new MessageListener<S>() {
             @Override
             public void onNewMessage(final S message) {
                 post(new Runnable() {
                     @Override
                     public void run() {
-                        points = callable2.call(message);
+                        points = callableToPoints.call(message);
                     }
                 });
             }
         });
 
-        subscriber3.addMessageListener(new MessageListener<U>() {
+        linesSubscriber.addMessageListener(new MessageListener<U>() {
             @Override
             public void onNewMessage(final U message) {
                 post(new Runnable() {
                     @Override
                     public void run() {
-                        targetRects = callable3.call(message);
+                        lines = callableToLines.call(message);
+                    }
+                });
+            }
+        });
+
+        rectsSubscriber.addMessageListener(new MessageListener<V>() {
+            @Override
+            public void onNewMessage(final V message) {
+                post(new Runnable() {
+                    @Override
+                    public void run() {
+                        targetRects = callableToRects.call(message);
                     }
                 });
             }

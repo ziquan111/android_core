@@ -19,6 +19,17 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <activity
+            android:name=".GalleryActivity"
+            android:screenOrientation="landscape" >
+        </activity>
+
+        <activity
+            android:name=".PhotoActivity"
+            android:screenOrientation="landscape" >
+        </activity>
+
         <activity android:name="org.ros.android.MasterChooser" />
 
         <service android:name="org.ros.android.NodeMainExecutorService" >

@@ -47,7 +47,7 @@ public abstract class RosActivity extends Activity {
     private final String notificationTicker;
     private final String notificationTitle;
 
-    protected NodeMainExecutorService nodeMainExecutorService;
+    protected static NodeMainExecutorService nodeMainExecutorService;
 
     private final class NodeMainExecutorServiceConnection implements ServiceConnection {
 
@@ -228,5 +228,23 @@ public abstract class RosActivity extends Activity {
                 | View.SYSTEM_UI_FLAG_FULLSCREEN
                 | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY;
         decorView.setSystemUiVisibility(uiOptions);
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        overridePendingTransition(0, 0);
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+        overridePendingTransition(0,0);
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        setIntent(intent);
     }
 }

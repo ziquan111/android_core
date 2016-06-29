@@ -4,8 +4,8 @@
     <dimen name="image_view_height">552dp</dimen>
     <dimen name="menu_bar_height">48dp</dimen>
 
-    <dimen name="button_width">80dp</dimen>
-    <dimen name="button_height">80dp</dimen>
+    <!--<dimen name="button_width">80dp</dimen>-->
+    <!--<dimen name="button_height">80dp</dimen>-->
     <dimen name="button_margin">16dp</dimen>
     <dimen name="button_padding">4dp</dimen>
 
@@ -13,5 +13,8 @@
     <dimen name="battery_height">24dp</dimen>
     <dimen name="battery_margin">16dp</dimen>
 
-    <dimen name="takeoff_land_button_width">106dp</dimen>
+    <dimen name="button_width">106dp</dimen>
+
+    <dimen name="drone_image_width">640px</dimen>
+    <dimen name="drone_image_height">368px</dimen>
 </resources>
