@@ -26,6 +26,7 @@ import android.view.GestureDetector;
 import android.view.MotionEvent;
 import android.view.ScaleGestureDetector;
 import android.view.View;
+import android.view.Gravity;
 import android.widget.Toast;
 
 import org.ros.message.MessageListener;
@@ -61,13 +62,13 @@ public class FleyeGestureListener implements View.OnTouchListener, NodeMain {
 
     private float scaleFactor;
     private float scaleSpanX, scaleSpanY, scaleSpan;
-    private boolean isMultifingers;
+    private boolean isDoublefingers, isMorefingers;
     private int track_id;
 
     private Toast toast;
 
-    private boolean isLongPress;
-    private CountDownTimer timerLongPress;
+//    private boolean isLongPress;
+//    private CountDownTimer timerLongPress;
 
     private CountDownTimer timerScaleOrScroll;
     private boolean isScalingProtected;
@@ -77,6 +78,10 @@ public class FleyeGestureListener implements View.OnTouchListener, NodeMain {
     private ArrayList<MyTarget> targets;
     private boolean isDirectManipulation, isScaling, isScrolling;
     private int targetIdBeingManipulated;
+
+//    enum MyMode {
+//        PAN_TILT, ZOOM, MOVE_AROUND, DIRECT_MANIPULATION, DRAW
+//    }
 
     class MyTarget {
         int id = -1;
@@ -98,26 +103,12 @@ public class FleyeGestureListener implements View.OnTouchListener, NodeMain {
                 toast.cancel();
                 toast = Toast.makeText(context, "Confirm target " + targetIdBeingManipulated
                         , Toast.LENGTH_SHORT);
+                toast.setGravity(Gravity.TOP | Gravity.CENTER_HORIZONTAL, 0, 0);
                 toast.show();
                 return true;
             }
             return false;
         }
-
-//        @Override
-//        public boolean onDoubleTap(MotionEvent e) {
-//            if (isDirectManipulation) {
-//                Float32MultiArray array = gesturePublisher.newMessage();
-//                array.setData(new float[]{'N', targetIdBeingManipulated});
-//                gesturePublisher.publish(array);
-//                toast.cancel();
-//                toast = Toast.makeText(context, "Reduce target priority" + targetIdBeingManipulated
-//                        , Toast.LENGTH_SHORT);
-//                toast.show();
-//                return true;
-//            }
-//            return false;
-//        }
 
         @Override
         public boolean onScroll(MotionEvent e1, MotionEvent e2, float distanceX, float distanceY) {
@@ -145,15 +136,20 @@ public class FleyeGestureListener implements View.OnTouchListener, NodeMain {
                 toast.cancel();
                 toast = Toast.makeText(context, "Composing target " + targetIdBeingManipulated + " to " + getDroneImageXFromTouchXInPx(x2) + ", " + getDroneImageYFromTouchYInPx(y2)
                         , Toast.LENGTH_SHORT);
+                toast.setGravity(Gravity.TOP | Gravity.CENTER_HORIZONTAL, 0, 0);
                 toast.show();
-            } else {
+            } else if (isDoublefingers || isMorefingers){
                 Float32MultiArray array = gesturePublisher.newMessage();
-                array.setData(new float[]{(isMultifingers ? 'I' : 'i'),  getDistanceRatioAlongXFromTouchXInPx(x2 - x1), getDistanceRatioAlongYFromTouchYInPx(y2 - y1)});
+                array.setData(new float[]{(isMorefingers ? 'I' : 'i'),  getDistanceRatioAlongXFromTouchXInPx(x2 - x1), getDistanceRatioAlongYFromTouchYInPx(y2 - y1)});
                 gesturePublisher.publish(array);
                 toast.cancel();
-                toast = Toast.makeText(context, (isMultifingers ? "Doing pan-tilt" : "Moving around") //+ ": " + getDistanceRatioAlongXFromTouchXInPx(x2 - x1) + ", " + getDistanceRatioAlongYFromTouchYInPx(y2 - y1)
+                toast = Toast.makeText(context, (isMorefingers ? "Doing pan-tilt" : "Navigating") //+ ": " + getDistanceRatioAlongXFromTouchXInPx(x2 - x1) + ", " + getDistanceRatioAlongYFromTouchYInPx(y2 - y1)
                         , Toast.LENGTH_SHORT);
+                toast.setGravity(Gravity.TOP | Gravity.CENTER_HORIZONTAL, 0, 0);
                 toast.show();
+            } else {
+                // single finger drawing
+                // nothing need to be handled
             }
             return true;
         }
@@ -186,6 +182,7 @@ public class FleyeGestureListener implements View.OnTouchListener, NodeMain {
 
             toast.cancel();
             toast = Toast.makeText(context, "Zooming: " + (scaleFactor > 1? "in" : "out"), Toast.LENGTH_SHORT);
+            toast.setGravity(Gravity.TOP | Gravity.CENTER_HORIZONTAL, 0, 0);
             toast.show();
 
             return true;
@@ -195,31 +192,31 @@ public class FleyeGestureListener implements View.OnTouchListener, NodeMain {
     public FleyeGestureListener(final Context context) {
         gestureDetector = new GestureDetectorCompat(context, new MyGestureListener());
         scaleGestureDetector = new ScaleGestureDetector(context, new MyScaleGestureListener());
-        scaleGestureDetector.setQuickScaleEnabled(true);
+        scaleGestureDetector.setQuickScaleEnabled(false);
         trace = new ArrayList<float[]>();
         targets = new ArrayList<MyTarget>();
         this.context = context;
 
-        isLongPress = false;
-        timerLongPress = new CountDownTimer(500, 100) {
-            @Override
-            public void onTick(long millisUntilFinished) {
+//        isLongPress = false;
+//        timerLongPress = new CountDownTimer(500, 100) {
+//            @Override
+//            public void onTick(long millisUntilFinished) {
+////                toast.cancel();
+////                toast = Toast.makeText(context, "counting down", Toast.LENGTH_SHORT);
+////                toast.show();
+//                return;
+//            }
+//
+//            @Override
+//            public void onFinish() {
+//                isLongPress = true;
 //                toast.cancel();
-//                toast = Toast.makeText(context, "counting down", Toast.LENGTH_SHORT);
+//                toast = Toast.makeText(context, "1. Circle your target\n2. Draw a stroke to explore", Toast.LENGTH_LONG);
 //                toast.show();
-                return;
-            }
-
-            @Override
-            public void onFinish() {
-                isLongPress = true;
-                toast.cancel();
-                toast = Toast.makeText(context, "1. Circle your target\n2. Draw a stroke to explore", Toast.LENGTH_LONG);
-                toast.show();
-////                System.out.println("timer finish");
-////                parseGesture();
-            }
-        };
+//////                System.out.println("timer finish");
+//////                parseGesture();
+//            }
+//        };
         timerScaleOrScroll = new CountDownTimer(200, 100) {
             @Override
             public void onTick(long millisUntilFinished) {
@@ -239,7 +236,11 @@ public class FleyeGestureListener implements View.OnTouchListener, NodeMain {
         isScrolling = false;
         isScaling = false;
 
-        toast = Toast.makeText(context, "Press and hold to start", Toast.LENGTH_SHORT);
+        isDoublefingers = false;
+        isMorefingers = false;
+
+        toast = Toast.makeText(context, "Welcome", Toast.LENGTH_SHORT);
+        toast.setGravity(Gravity.TOP | Gravity.CENTER_HORIZONTAL, 0, 0);
         toast.show();
     }
 
@@ -265,7 +266,8 @@ public class FleyeGestureListener implements View.OnTouchListener, NodeMain {
                 float pointerY = MotionEventCompat.getY(event, index);
                 float droneImageXFromTouchXInPx = getDroneImageXFromTouchXInPx(pointerX);
                 float droneImageYFromTouchYInPx = getDroneImageYFromTouchYInPx(pointerY);
-                timerLongPress.start();
+//                timerLongPress.start();
+
 //                trace.add(new float[]{pointerX, pointerY});
                 // long press on the target rect
 //                System.out.println("x " + pointerX + "\ty:" + pointerY + "\t");
@@ -287,6 +289,7 @@ public class FleyeGestureListener implements View.OnTouchListener, NodeMain {
 
                             toast.cancel();
                             toast = Toast.makeText(context, "Target " + target.id + " canceled", Toast.LENGTH_SHORT);
+                            toast.setGravity(Gravity.TOP | Gravity.CENTER_HORIZONTAL, 0, 0);
                             toast.show();
                         }
                     }
@@ -300,11 +303,18 @@ public class FleyeGestureListener implements View.OnTouchListener, NodeMain {
 //                System.out.println("droneImageX, droneImageY = " + droneImageX + "\t" + droneImageY);
                 return true;
             case MotionEvent.ACTION_POINTER_DOWN:
-                isLongPress = false;
-                timerLongPress.cancel();
+//                isLongPress = false;
+//                timerLongPress.cancel();
+
+                int count = event.getPointerCount();
 
                 if (!isScrolling)
-                    isMultifingers = true;
+                    if (count > 2) {
+                        isDoublefingers = false;
+                        isMorefingers = true;
+                    } else if (count == 2 && !isMorefingers) {
+                        isDoublefingers = true;
+                    }
 
                 timerScaleOrScroll.start();
                 isScalingProtected = true;
@@ -319,20 +329,23 @@ public class FleyeGestureListener implements View.OnTouchListener, NodeMain {
 //                }
 //                return true;
             case MotionEvent.ACTION_MOVE:
-                if (isLongPress) {
-                    trace.add(new float[]{MotionEventCompat.getX(event, index), MotionEventCompat.getY(event, index)});
-                } else {
-                    isLongPress = false;
-                    timerLongPress.cancel();
-                }
-                return true;
+                break;
+//                if (isLongPress) {
+//                    trace.add(new float[]{MotionEventCompat.getX(event, index), MotionEventCompat.getY(event, index)});
+//                } else {
+//                    isLongPress = false;
+//                    timerLongPress.cancel();
+//                }
+//                return true;
 //                if (isDirectManipulation && track_id == id) {
 //                    trace.add(new float[]{MotionEventCompat.getX(event, index), MotionEventCompat.getY(event, index)});
 //                }
 //                return true;
             case MotionEvent.ACTION_UP:
                 // send one time gesture event
-                if (!isScrolling)
+//                if (!isScrolling)
+                this.toast.cancel();
+                if (!isDoublefingers && !isMorefingers)
                     parseGesture();
 //                if (!isLongPress) {
 //                    parseGesture();
@@ -427,10 +440,11 @@ public class FleyeGestureListener implements View.OnTouchListener, NodeMain {
         trace.clear();
         scaleFactor = 1;
         scaleSpanX = scaleSpanY = scaleSpan = 0;
-        isMultifingers = false;
+        isDoublefingers = false;
+        isMorefingers = false;
         track_id = -1;
-        isLongPress = false;
-        timerLongPress.cancel();
+//        isLongPress = false;
+//        timerLongPress.cancel();
         timerScaleOrScroll.cancel();
         isScalingProtected=false;
         isDirectManipulation = false;
@@ -462,7 +476,7 @@ public class FleyeGestureListener implements View.OnTouchListener, NodeMain {
 //            }
 //        }
         // circle
-        else if (!isMultifingers && trace.size() >= 20 && distanceBetween(trace.get(0), trace.get(trace.size() - 1)) < 300) {
+        else if (!isDoublefingers && trace.size() >= 20 && distanceBetween(trace.get(0), trace.get(trace.size() - 1)) < 300) {
             float[] traceData = new float[trace.size() * 2 + 1];
             traceData[0] = 'c';
             for (int i = 0; i < trace.size(); i++) {
@@ -480,21 +494,22 @@ public class FleyeGestureListener implements View.OnTouchListener, NodeMain {
 
             toast.cancel();
             toast = Toast.makeText(context, "Circle", Toast.LENGTH_SHORT);
+            toast.setGravity(Gravity.TOP | Gravity.CENTER_HORIZONTAL, 0, 0);
             toast.show();
         }
         // U shape
-        else if (!isMultifingers && trace.size() >= 10 && distanceY(trace.get(0), trace.get(trace.size() - 1)) < 200 && distanceX(trace.get(0), trace.get(trace.size() - 1)) > 200 && averageY() - averageY(trace.get(0), trace.get(trace.size() - 1)) >= 100) {
-            String str = orbitPubliser.newMessage();
-            str.setData("visible");
-            orbitPubliser.publish(str);
-//            System.out.println("ushape " + (int)'U');
-
-            toast.cancel();
-            toast = Toast.makeText(context, "Ready to orbit", Toast.LENGTH_SHORT);
-            toast.show();
-        }
+//        else if (!isDoublefingers && trace.size() >= 10 && distanceY(trace.get(0), trace.get(trace.size() - 1)) < 200 && distanceX(trace.get(0), trace.get(trace.size() - 1)) > 200 && averageY() - averageY(trace.get(0), trace.get(trace.size() - 1)) >= 100) {
+//            String str = orbitPubliser.newMessage();
+//            str.setData("visible");
+//            orbitPubliser.publish(str);
+////            System.out.println("ushape " + (int)'U');
+//
+//            toast.cancel();
+//            toast = Toast.makeText(context, "Ready to orbit", Toast.LENGTH_SHORT);
+//            toast.show();
+//        }
 //        // A shape
-//        else if (!isMultifingers && trace.size() >= 10 && distanceY(trace.get(0), trace.get(trace.size() - 1)) < 200 && distanceX(trace.get(0), trace.get(trace.size() - 1)) > 200 &&  averageY(trace.get(0), trace.get(trace.size() - 1)) - averageY() >= 100) {
+//        else if (!isDoublefingers && trace.size() >= 10 && distanceY(trace.get(0), trace.get(trace.size() - 1)) < 200 && distanceX(trace.get(0), trace.get(trace.size() - 1)) > 200 &&  averageY(trace.get(0), trace.get(trace.size() - 1)) - averageY() >= 100) {
 //            Float32MultiArray array = gesturePublisher.newMessage();
 //            array.setData(new float[] {'A'});
 //            gesturePublisher.publish(array);
@@ -505,7 +520,7 @@ public class FleyeGestureListener implements View.OnTouchListener, NodeMain {
 //            toast.show();
 //        }
 //        // Z shape
-//        else if (!isMultifingers && trace.size() >= 10 && distanceX(trace.get(0), trace.get(trace.size() - 1)) > 200 && distanceY(trace.get(0), trace.get(trace.size() -1)) > 200) {
+//        else if (!isDoublefingers && trace.size() >= 10 && distanceX(trace.get(0), trace.get(trace.size() - 1)) > 200 && distanceY(trace.get(0), trace.get(trace.size() -1)) > 200) {
 //            Float32MultiArray array = gesturePublisher.newMessage();
 //            array.setData(new float[] {'Z'});
 //            gesturePublisher.publish(array);
@@ -576,57 +591,57 @@ public class FleyeGestureListener implements View.OnTouchListener, NodeMain {
 //        else if (trace.size() > 2 && distanceX(trace.get(0), trace.get(trace.size() - 1)) < 100 && trace.get(trace.size() - 1)[1] - trace.get(0)[1] >= 100) {
 //            Float32MultiArray array = gesturePublisher.newMessage();
 ////            if (isLongPress) {
-////                array.setData(new float[]{'I', (isMultifingers ? 'D' : 'd'), traceLengthInPx()});
+////                array.setData(new float[]{'I', (isDoublefingers ? 'D' : 'd'), traceLengthInPx()});
 ////            } else {
-//            array.setData(new float[]{'I', (isMultifingers ? 'D' : 'd'), traceLengthInPx()});
+//            array.setData(new float[]{'I', (isDoublefingers ? 'D' : 'd'), traceLengthInPx()});
 ////            }
 //            gesturePublisher.publish(array);
-////            System.out.println(isMultifingers ? "double swap down " + (int)'I' + " " + (int)'D' : "swap down " + (int)'I' + " " + (int)'d');
+////            System.out.println(isDoublefingers ? "double swap down " + (int)'I' + " " + (int)'D' : "swap down " + (int)'I' + " " + (int)'d');
 //
 //            toast.cancel();
-//            toast = Toast.makeText(context, (isMultifingers ? "Multi-finger DOWN: moving backward" : "DOWN: moving upward"), Toast.LENGTH_SHORT);
+//            toast = Toast.makeText(context, (isDoublefingers ? "Multi-finger DOWN: moving backward" : "DOWN: moving upward"), Toast.LENGTH_SHORT);
 //            toast.show();
 //        }
 //        else if (trace.size() > 2 && distanceX(trace.get(0), trace.get(trace.size() - 1)) < 100 && trace.get(0)[1] - trace.get(trace.size() - 1)[1] >= 100) {
 //            Float32MultiArray array = gesturePublisher.newMessage();
 ////            if (isLongPress) {
-////                array.setData(new float[]{'I', (isMultifingers ? 'U' : 'u'), traceLengthInPx()});
+////                array.setData(new float[]{'I', (isDoublefingers ? 'U' : 'u'), traceLengthInPx()});
 ////            } else {
-//            array.setData(new float[]{'I', (isMultifingers ? 'U' : 'u'), traceLengthInPx()});
+//            array.setData(new float[]{'I', (isDoublefingers ? 'U' : 'u'), traceLengthInPx()});
 ////            }
 //            gesturePublisher.publish(array);
-////            System.out.println(isMultifingers ? "double swap up " + (int)'I' + " " + (int)'U' : "swap up " + (int)'I' + " " + (int)'u' );
+////            System.out.println(isDoublefingers ? "double swap up " + (int)'I' + " " + (int)'U' : "swap up " + (int)'I' + " " + (int)'u' );
 //
 //            toast.cancel();
-//            toast = Toast.makeText(context, (isMultifingers ? "Multi-finger UP: moving forward" : "UP: moving downward"), Toast.LENGTH_SHORT);
+//            toast = Toast.makeText(context, (isDoublefingers ? "Multi-finger UP: moving forward" : "UP: moving downward"), Toast.LENGTH_SHORT);
 //            toast.show();
 //        }
 //        else if (trace.size() > 2 && distanceY(trace.get(0), trace.get(trace.size() - 1)) < 100 && trace.get(trace.size() - 1)[0] - trace.get(0)[0] >= 100) {
 //            Float32MultiArray array = gesturePublisher.newMessage();
 ////            if (isLongPress) {
-////                array.setData(new float[]{'I', (isMultifingers ? 'R' : 'r'), traceLengthInPx()});
+////                array.setData(new float[]{'I', (isDoublefingers ? 'R' : 'r'), traceLengthInPx()});
 ////            } else {
-//            array.setData(new float[]{'I', (isMultifingers ? 'R' : 'r'), traceLengthInPx()});
+//            array.setData(new float[]{'I', (isDoublefingers ? 'R' : 'r'), traceLengthInPx()});
 ////            }
 //            gesturePublisher.publish(array);
-////            System.out.println(isMultifingers ? "double swap right " + (int)'I' + " " + (int)'R' : "swap right " + (int)'I' + " " + (int)'r' );
+////            System.out.println(isDoublefingers ? "double swap right " + (int)'I' + " " + (int)'R' : "swap right " + (int)'I' + " " + (int)'r' );
 //
 //            toast.cancel();
-//            toast = Toast.makeText(context, (isMultifingers ? "Multi-finger RIGHT: turning left" : "RIGHT: moving left"), Toast.LENGTH_SHORT);
+//            toast = Toast.makeText(context, (isDoublefingers ? "Multi-finger RIGHT: turning left" : "RIGHT: moving left"), Toast.LENGTH_SHORT);
 //            toast.show();
 //        }
 //        else if (trace.size() > 2 && distanceY(trace.get(0), trace.get(trace.size() - 1)) < 100 && trace.get(0)[0] - trace.get(trace.size() - 1)[0] >= 100) {
 //            Float32MultiArray array = gesturePublisher.newMessage();
 ////            if (isLongPress) {
-////                array.setData(new float[]{'I', (isMultifingers ? 'L' : 'l'), traceLengthInPx()});
+////                array.setData(new float[]{'I', (isDoublefingers ? 'L' : 'l'), traceLengthInPx()});
 ////            } else {
-//            array.setData(new float[]{'I', (isMultifingers ? 'L' : 'l'), traceLengthInPx()});
+//            array.setData(new float[]{'I', (isDoublefingers ? 'L' : 'l'), traceLengthInPx()});
 ////            }
 //            gesturePublisher.publish(array);
-////            System.out.println(isMultifingers ? "double swap left "  + (int)'I' + " " + (int)'L'  : "swap left " + (int)'I' + " " + (int)'l' );
+////            System.out.println(isDoublefingers ? "double swap left "  + (int)'I' + " " + (int)'L'  : "swap left " + (int)'I' + " " + (int)'l' );
 //
 //            toast.cancel();
-//            toast = Toast.makeText(context, (isMultifingers ? "Multi-finger LEFT: turning right" : "LEFT: moving right"), Toast.LENGTH_SHORT);
+//            toast = Toast.makeText(context, (isDoublefingers ? "Multi-finger LEFT: turning right" : "LEFT: moving right"), Toast.LENGTH_SHORT);
 //            toast.show();
 //        }
 //        else {

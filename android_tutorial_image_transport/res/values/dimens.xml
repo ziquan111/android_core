@@ -17,4 +17,7 @@
 
     <dimen name="drone_image_width">640px</dimen>
     <dimen name="drone_image_height">368px</dimen>
+
+    <dimen name="toast_text_size">16dp</dimen>
+    <dimen name="toast_text_padding">8dp</dimen>
 </resources>

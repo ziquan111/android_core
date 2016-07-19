@@ -55,30 +55,24 @@
                 android:layout_gravity="right">
 
                 <org.ros.android.view.RosButton
-                    android:layout_width="@dimen/menu_bar_height"
+                    android:layout_width="@dimen/button_width"
                     android:layout_height="match_parent"
-                    android:layout_marginLeft="@dimen/button_margin"
-                    android:layout_marginRight="@dimen/button_margin"
                     android:src="@drawable/ic_panorama_horizontal_grey_18dp"
                     android:scaleType="centerInside"
                     android:background="?android:attr/selectableItemBackground"
                     android:id="@+id/pano_button"/>
 
                 <org.ros.android.view.RosButton
-                    android:layout_width="@dimen/menu_bar_height"
+                    android:layout_width="@dimen/button_width"
                     android:layout_height="match_parent"
-                    android:layout_marginLeft="@dimen/button_margin"
-                    android:layout_marginRight="@dimen/button_margin"
                     android:src="@drawable/ic_orbit_grey_18dp"
                     android:scaleType="centerInside"
                     android:background="?android:attr/selectableItemBackground"
                     android:id="@+id/orbit_button"/>
 
                 <org.ros.android.view.RosButton
-                    android:layout_width="@dimen/menu_bar_height"
+                    android:layout_width="@dimen/button_width"
                     android:layout_height="match_parent"
-                    android:layout_marginLeft="@dimen/button_margin"
-                    android:layout_marginRight="@dimen/button_margin"
                     android:src="@drawable/ic_zigzag_grey_18dp"
                     android:scaleType="centerInside"
                     android:background="?android:attr/selectableItemBackground"

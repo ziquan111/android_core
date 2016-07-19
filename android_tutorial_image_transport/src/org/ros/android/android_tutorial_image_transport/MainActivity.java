@@ -19,9 +19,16 @@ package org.ros.android.android_tutorial_image_transport;
 import android.content.Intent;
 import android.graphics.RectF;
 import android.os.Bundle;
+import android.os.Handler;
 import android.util.Pair;
+import android.view.Gravity;
+import android.view.LayoutInflater;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
+import android.widget.TextView;
+import android.widget.Toast;
 
 import com.google.common.collect.Maps;
 
@@ -53,6 +60,9 @@ public class MainActivity extends RosActivity {
     private RosButton panoBtn, orbitBtn, zigzagBtn; //start orbiting button
     private RosShootButton shootBtn;  //shoot button
     private ImageView galleryBtn;
+
+    private View pano_toast_view, orbit_toast_view, zigzag_toast_view;
+    private Toast pano_toast, orbit_toast, zigzag_toast;
 
     private FleyeGestureListener fleyeGestureListener;
 
@@ -131,18 +141,75 @@ public class MainActivity extends RosActivity {
         panoBtn.addResource("white", R.drawable.ic_panorama_horizontal_white_18dp, 'P');
         panoBtn.addResource("grey", R.drawable.ic_panorama_horizontal_grey_18dp, '9');
         panoBtn.addResource("yellow", R.drawable.ic_panorama_horizontal_yellow_18dp, 'p');
+        panoBtn.setRunnable(
+                new Runnable() {
+                    @Override
+                    public void run() {
+                        TextView text = (TextView) pano_toast_view.findViewById(R.id.toast_text);
+                        if (panoBtn.getResourceName().equals("white")) {
+                            text.setText("Pano Start");
+                            text.setTextColor(getResources().getColor(R.color.toast_yellow));
+                        } else if (panoBtn.getResourceName().equals("yellow")) {
+                            text.setText("Pano End");
+                            text.setTextColor(getResources().getColor(R.color.toast_white));
+                        } else {
+                            return;
+                        }
+
+                        pano_toast.show();
+                    }
+                }
+        );
 
         orbitBtn = (RosButton) findViewById(R.id.orbit_button);
         orbitBtn.setTopicName("fleye/orbit");
         orbitBtn.addResource("white", R.drawable.ic_orbit_white_18dp, 'O');
         orbitBtn.addResource("grey", R.drawable.ic_orbit_grey_18dp, '0');
         orbitBtn.addResource("yellow", R.drawable.ic_orbit_yellow_18dp, 'o');
+        orbitBtn.setRunnable(
+                new Runnable() {
+                    @Override
+                    public void run() {
+                        TextView text = (TextView) orbit_toast_view.findViewById(R.id.toast_text);
+                        if (orbitBtn.getResourceName().equals("white")) {
+                            text.setText("Orbit Start");
+                            text.setTextColor(getResources().getColor(R.color.toast_yellow));
+                        } else if (orbitBtn.getResourceName().equals("yellow")) {
+                            text.setText("Orbit End");
+                            text.setTextColor(getResources().getColor(R.color.toast_white));
+                        } else {
+                            return;
+                        }
+
+                        orbit_toast.show();
+                    }
+                }
+        );
 
         zigzagBtn = (RosButton) findViewById(R.id.zigzag_button);
         zigzagBtn.setTopicName("fleye/zigzag");
         zigzagBtn.addResource("white", R.drawable.ic_zigzag_white_18dp, 'Z');
         zigzagBtn.addResource("grey", R.drawable.ic_zigzag_grey_18dp, '2');
         zigzagBtn.addResource("yellow", R.drawable.ic_zigzag_yellow_18dp, 'z');
+        zigzagBtn.setRunnable(
+                new Runnable() {
+                    @Override
+                    public void run() {
+                        TextView text = (TextView) zigzag_toast_view.findViewById(R.id.toast_text);
+                        if (zigzagBtn.getResourceName().equals("white")) {
+                            text.setText("Zigzag Start");
+                            text.setTextColor(getResources().getColor(R.color.toast_yellow));
+                        } else if (zigzagBtn.getResourceName().equals("yellow")) {
+                            text.setText("Zigzag End");
+                            text.setTextColor(getResources().getColor(R.color.toast_white));
+                        } else {
+                            return;
+                        }
+
+                        zigzag_toast.show();
+                    }
+                }
+        );
 
         shootBtn = (RosShootButton) findViewById(R.id.shoot_button);
         shootBtn.setRunnable(
@@ -165,6 +232,26 @@ public class MainActivity extends RosActivity {
                     }
                 }
         );
+
+        // toast
+        LayoutInflater inflater = getLayoutInflater();
+        pano_toast_view = inflater.inflate(R.layout.toast, (ViewGroup) findViewById(R.id.toast_layout_root));
+        pano_toast = new Toast(getApplicationContext());
+        pano_toast.setGravity(Gravity.BOTTOM | Gravity.RIGHT, 2 * (int) (getResources().getDimension(R.dimen.button_width)), 0);
+        pano_toast.setDuration(Toast.LENGTH_SHORT);
+        pano_toast.setView(pano_toast_view);
+
+        orbit_toast_view = inflater.inflate(R.layout.toast, (ViewGroup) findViewById(R.id.toast_layout_root));
+        orbit_toast = new Toast(getApplicationContext());
+        orbit_toast.setGravity(Gravity.BOTTOM | Gravity.RIGHT, (int) (getResources().getDimension(R.dimen.button_width)), 0);
+        orbit_toast.setDuration(Toast.LENGTH_SHORT);
+        orbit_toast.setView(orbit_toast_view);
+
+        zigzag_toast_view = inflater.inflate(R.layout.toast, (ViewGroup) findViewById(R.id.toast_layout_root));
+        zigzag_toast = new Toast(getApplicationContext());
+        zigzag_toast.setGravity(Gravity.BOTTOM | Gravity.RIGHT, 0, 0);
+        zigzag_toast.setDuration(Toast.LENGTH_SHORT);
+        zigzag_toast.setView(zigzag_toast_view);
     }
 
     public void galleryViewClicked(View unused) {
